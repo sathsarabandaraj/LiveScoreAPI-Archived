@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace MongoDBDemo
 {
@@ -25,6 +26,20 @@ namespace MongoDBDemo
             catch (Exception mongoInsertEx)
             {
                 return (false, mongoInsertEx.Message);
+            }
+        }
+
+        public async Task<(bool, string, List<T>?)> LoadRecords<T>()
+        {
+            try
+            {
+                var collection = db.GetCollection<T>(collectionName);
+                var doc = collection.Find(new BsonDocument()).ToList();
+                return (true, "", doc);
+            }
+            catch (Exception mongoGetEx)
+            {
+                return (false, mongoGetEx.Message, null);
             }
         }
     }

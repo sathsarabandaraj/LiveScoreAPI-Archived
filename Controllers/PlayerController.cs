@@ -6,7 +6,7 @@ namespace LiveScoreAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class PlayerController : ControllerBase
+public class playerController : ControllerBase
 {
     private static readonly IConfiguration configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", true, true)
@@ -24,6 +24,20 @@ public class PlayerController : ControllerBase
         else
         {
             return BadRequest(isInserted.Item2);
+        }
+    }
+
+    [HttpGet("allPlayers")]
+    public async Task<IActionResult> GetPlayers()
+    {
+        var getStatus = await _db.LoadRecords<Player>();
+        if (getStatus.Item1)
+        {
+            return Ok(getStatus.Item3);
+        }
+        else
+        {
+            return BadRequest(getStatus.Item2);
         }
     }
 }
