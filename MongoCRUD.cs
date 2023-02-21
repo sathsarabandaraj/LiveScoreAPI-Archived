@@ -42,5 +42,20 @@ namespace MongoDBDemo
                 return (false, mongoGetEx.Message, null);
             }
         }
+
+        public async Task<(bool, string, List<T>?)> LoadRecordsByQuery<T>(FilterDefinition<T> query)
+        {
+            try
+            {
+                var collection = db.GetCollection<T>(collectionName);
+                var documents = await collection.Find(query).ToListAsync();
+                return (true, "", documents);
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message, null);
+            }
+        }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using MongoDBDemo;
+using MongoDB.Driver;
 using LiveScoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +12,7 @@ public class playerController : ControllerBase
     private static readonly IConfiguration configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", true, true)
     .Build();
-    readonly MongoCRUD _db = new MongoCRUD(configuration, "player");
+    readonly MongoCRUD _db = new(configuration, "player");
 
     [HttpPost("addPlayer")]
     public async Task<IActionResult> AddPlayerAsync([FromBody] Player playerData)
@@ -31,13 +32,46 @@ public class playerController : ControllerBase
     public async Task<IActionResult> GetPlayers()
     {
         var getStatus = await _db.LoadRecords<Player>();
-        if (getStatus.Item1)
-        {
-            return Ok(getStatus.Item3);
-        }
-        else
+        if (!getStatus.Item1)
         {
             return BadRequest(getStatus.Item2);
         }
+        return Ok(getStatus.Item3);
+    }
+
+    [HttpGet("anyQuery")]
+    public async Task<IActionResult> GetPlayersByQuery([FromQuery] int? id, [FromQuery] string? name, [FromQuery] bool? isHost)
+    {
+        #region FilterBuilder
+        var filterBuilder = Builders<Player>.Filter;
+        var filter = filterBuilder.Empty;
+        var isEmptyQuery = true;
+        if (id.HasValue)
+        {
+            filter = filter & filterBuilder.Eq(p => p.id, id.Value);
+            isEmptyQuery = false;
+        }
+        if (!string.IsNullOrEmpty(name))
+        {
+            filter = filter & filterBuilder.Regex(p => p.name, name.ToString());
+            isEmptyQuery = false;
+        }
+        if (isHost.HasValue)
+        {
+            filter = filter & filterBuilder.Eq(p => p.isHost, isHost.Value);
+            isEmptyQuery = false;
+        }
+        #endregion
+
+        if (!isEmptyQuery)
+        {
+            var getQueryStatus = await _db.LoadRecordsByQuery(filter);
+            if (!getQueryStatus.Item1)
+            {
+                return BadRequest(getQueryStatus.Item2);
+            }
+            return Ok(getQueryStatus.Item3);
+        }
+        return BadRequest();
     }
 }
