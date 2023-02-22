@@ -74,4 +74,18 @@ public class playerController : ControllerBase
         }
         return BadRequest();
     }
+
+    [HttpPut("updatePlayer")]
+    public async Task<IActionResult> UpdatePlayer([FromBody] Player playerData)
+    {
+        var isUpdated = await _db.UpdateRecordById(playerData.id.ToString(),playerData);
+        if (isUpdated.Item1)
+        {
+            return Ok($"Player '{playerData.name}' {isUpdated.Item2}");
+        }
+        else
+        {
+            return BadRequest(isUpdated.Item2);
+        }
+    }
 }
