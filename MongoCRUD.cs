@@ -5,21 +5,21 @@ namespace MongoDBDemo
 {
     public class MongoCRUD
     {
-        private IMongoDatabase db;
-        private string collectionName;
+        private readonly IMongoDatabase _db;
+        private readonly string _collectionName;
 
         public MongoCRUD(IConfiguration config, string collection)
         {
             var client = new MongoClient(config.GetConnectionString("MongoDB"));
-            db = client.GetDatabase("match1");
-            collectionName = collection;
+            _db = client.GetDatabase("match1");
+            _collectionName = collection;
         }
 
         public async Task<(bool, string)> InsertRecord<T>(T record)
         {
             try
             {
-                var collection = db.GetCollection<T>(collectionName);
+                var collection = _db.GetCollection<T>(_collectionName);
                 await collection.InsertOneAsync(record);
                 return (true, "inserted successfully");
             }
@@ -33,7 +33,7 @@ namespace MongoDBDemo
         {
             try
             {
-                var collection = db.GetCollection<T>(collectionName);
+                var collection = _db.GetCollection<T>(_collectionName);
                 var doc = await collection.Find(new BsonDocument()).ToListAsync();
                 return (true, "", doc);
             }
@@ -47,21 +47,21 @@ namespace MongoDBDemo
         {
             try
             {
-                var collection = db.GetCollection<T>(collectionName);
+                var collection = _db.GetCollection<T>(_collectionName);
                 var documents = await collection.Find(query).ToListAsync();
                 return (true, "", documents);
             }
-            catch (Exception ex)
+            catch (Exception mongoLoadQEx)
             {
-                return (false, ex.Message, null);
+                return (false, mongoLoadQEx.Message, null);
             }
         }
 
-        public async Task<(bool, string)> UpdateRecordById<T>(string id, T record)
+        public async Task<(bool, string)> UpdateRecordById<T>(int id, T record)
         {
             try
             {
-                var filter = Builders<T>.Filter.Eq("_id", int.Parse(id));
+                var filter = Builders<T>.Filter.Eq("_id", id);
                 var getQueryStatus = await LoadRecordsByQuery(filter);
 
                 if (!getQueryStatus.Item1)
@@ -74,7 +74,7 @@ namespace MongoDBDemo
                     return (false, "not found.");
                 }
 
-                var collection = db.GetCollection<T>(collectionName);
+                var collection = _db.GetCollection<T>(_collectionName);
                 var result = await collection.ReplaceOneAsync(filter, record);
 
                 if (result.ModifiedCount == 0)
@@ -84,11 +84,29 @@ namespace MongoDBDemo
 
                 return (true, "updated successfully");
             }
-            catch (Exception ex)
+            catch (Exception monogoUpdateEx)
             {
-                return (false, ex.Message);
+                return (false, monogoUpdateEx.Message);
             }
         }
 
+        public async Task<(bool, string)> DeleteRecord<T>(int? id)
+        {
+            try
+            {
+                var collection = _db.GetCollection<T>(_collectionName);
+                var filter = Builders<T>.Filter.Eq("_id", id);
+                var result = await collection.DeleteOneAsync(filter);
+                if (result.DeletedCount > 0)
+                {
+                    return (true, "deleted successfully");
+                }
+                return (false, "no record found");
+            }
+            catch (Exception mongoDeleteEx)
+            {
+                return (false, mongoDeleteEx.Message);
+            }
+        }
     }
 }

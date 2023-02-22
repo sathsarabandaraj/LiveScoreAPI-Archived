@@ -18,14 +18,11 @@ public class playerController : ControllerBase
     public async Task<IActionResult> AddPlayerAsync([FromBody] Player playerData)
     {
         var isInserted = await _db.InsertRecord(playerData);
-        if (isInserted.Item1)
-        {
-            return Ok($"Player '{playerData.name}' {isInserted.Item2}");
-        }
-        else
+        if (!isInserted.Item1)
         {
             return BadRequest(isInserted.Item2);
         }
+        return Ok($"Player '{playerData.name}' {isInserted.Item2}");
     }
 
     [HttpGet("allPlayers")]
@@ -48,17 +45,17 @@ public class playerController : ControllerBase
         var isEmptyQuery = true;
         if (id.HasValue)
         {
-            filter = filter & filterBuilder.Eq(p => p.id, id.Value);
+            filter &= filterBuilder.Eq(p => p.id, id.Value);
             isEmptyQuery = false;
         }
         if (!string.IsNullOrEmpty(name))
         {
-            filter = filter & filterBuilder.Regex(p => p.name, name.ToString());
+            filter &= filterBuilder.Regex(p => p.name, name.ToString());
             isEmptyQuery = false;
         }
         if (isHost.HasValue)
         {
-            filter = filter & filterBuilder.Eq(p => p.isHost, isHost.Value);
+            filter &= filterBuilder.Eq(p => p.isHost, isHost.Value);
             isEmptyQuery = false;
         }
         #endregion
@@ -78,14 +75,25 @@ public class playerController : ControllerBase
     [HttpPut("updatePlayer")]
     public async Task<IActionResult> UpdatePlayer([FromBody] Player playerData)
     {
-        var isUpdated = await _db.UpdateRecordById(playerData.id.ToString(),playerData);
-        if (isUpdated.Item1)
-        {
-            return Ok($"Player '{playerData.name}' {isUpdated.Item2}");
-        }
-        else
+        var isUpdated = await _db.UpdateRecordById(playerData.id, playerData);
+        if (!isUpdated.Item1)
         {
             return BadRequest(isUpdated.Item2);
         }
+        return Ok($"Player '{playerData.name}' {isUpdated.Item2}");
+    }
+
+    [HttpDelete("deletePlayer")]
+    public async Task<IActionResult> DeletePlayerByID([FromQuery] int? id)
+    {
+        if (id.HasValue) {
+            var isDeleted = await _db.DeleteRecord<Player>(id);
+            if (!isDeleted.Item1 || id == null)
+            {
+                return BadRequest(isDeleted.Item2);
+            }
+            return NoContent();
+        }
+        return BadRequest("Empty Query");
     }
 }
