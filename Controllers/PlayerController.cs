@@ -2,7 +2,6 @@
 using MongoDB.Driver;
 using LiveScoreAPI.Models;
 using Microsoft.AspNetCore.Mvc;
-
 namespace LiveScoreAPI.Controllers;
 
 [Route("api/[controller]")]
@@ -39,7 +38,7 @@ public class playerController : ControllerBase
     [HttpGet("anyQuery")]
     public async Task<IActionResult> GetPlayersByQuery([FromQuery] int? id, [FromQuery] string? name, [FromQuery] bool? isHost)
     {
-        #region FilterBuilder
+        #region FilterBuilder       
         var filterBuilder = Builders<Player>.Filter;
         var filter = filterBuilder.Empty;
         var isEmptyQuery = true;
@@ -69,7 +68,7 @@ public class playerController : ControllerBase
             }
             return Ok(getQueryStatus.Item3);
         }
-        return BadRequest();
+        return BadRequest("Empty Query");
     }
 
     [HttpPut("updatePlayer")]
